@@ -1,6 +1,7 @@
 package com.termux.app.terminal;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
@@ -100,8 +101,34 @@ public class TermuxSessionsListViewController extends ArrayAdapter<TermuxSession
     @Override
     public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
         final TermuxSession selectedSession = getItem(position);
-        mActivity.getTermuxTerminalSessionClient().renameSession(selectedSession.getTerminalSession());
+        if (selectedSession == null) return true;
+
+        final TerminalSession terminalSession = selectedSession.getTerminalSession();
+        if (terminalSession == null) return true;
+
+        // 长按会话: 弹出操作菜单 (重命名 / 删除该会话)
+        final CharSequence[] items = new CharSequence[]{
+            mActivity.getString(R.string.title_rename_session),
+            mActivity.getString(R.string.action_delete_session)
+        };
+        new AlertDialog.Builder(mActivity)
+            .setTitle(toDisplayTitle(terminalSession))
+            .setItems(items, (dialog, which) -> {
+                if (which == 0) {
+                    mActivity.getTermuxTerminalSessionClient().renameSession(terminalSession);
+                } else {
+                    mActivity.getTermuxTerminalSessionClient().confirmAndRemoveSession(selectedSession);
+                }
+            })
+            .show();
         return true;
+    }
+
+    private static String toDisplayTitle(TerminalSession session) {
+        String name = session.mSessionName;
+        String title = session.getTitle();
+        if (TextUtils.isEmpty(name)) return TextUtils.isEmpty(title) ? "session" : title;
+        return TextUtils.isEmpty(title) ? name : name + " (" + title + ")";
     }
 
 }

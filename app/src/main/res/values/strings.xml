@@ -77,6 +77,9 @@
 
     <string name="action_kill_process">Kill process (%d)</string>
     <string name="title_confirm_kill_process">Really kill this session?</string>
+    <string name="action_delete_session">Delete session</string>
+    <string name="action_delete_session_confirm">Delete</string>
+    <string name="msg_confirm_delete_session">Delete session \"%1$s\"? Its running process will be killed.</string>
 
     <string name="action_style_terminal">Style</string>
     <string name="action_toggle_keep_screen_on">Keep screen on</string>

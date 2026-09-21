@@ -328,6 +328,44 @@ public class TermuxTerminalSessionClient extends TermuxTerminalSessionClientBase
         }, -1, null, -1, null, null);
     }
 
+    /** 确认后删除(关闭)该会话: 杀掉其中的进程并从会话列表中移除。 */
+    public void confirmAndRemoveSession(final TermuxSession sessionToRemove) {
+        if (sessionToRemove == null) return;
+
+        final TerminalSession terminalSession = sessionToRemove.getTerminalSession();
+        String display = terminalSession != null && !TextUtils.isEmpty(terminalSession.mSessionName)
+            ? terminalSession.mSessionName : mActivity.getString(R.string.action_delete_session);
+
+        new AlertDialog.Builder(mActivity)
+            .setTitle(R.string.action_delete_session)
+            .setMessage(mActivity.getString(R.string.msg_confirm_delete_session, display))
+            .setPositiveButton(R.string.action_delete_session_confirm, (dialog, which) -> {
+                dialog.dismiss();
+                removeSessionNow(sessionToRemove);
+            })
+            .setNegativeButton(android.R.string.cancel, null)
+            .show();
+    }
+
+    private void removeSessionNow(final TermuxSession sessionToRemove) {
+        TermuxService service = mActivity.getTermuxService();
+        if (service == null) return;
+
+        // SIGKILL 会话进程并同步触发移除回调 (onTermuxSessionExited -> 服务从列表移除)
+        sessionToRemove.killIfExecuting(mActivity, true);
+
+        if (service.getTermuxSessionsSize() == 0) {
+            // 最后一个会话被删除, 退出 Activity
+            mActivity.finishActivityIfNotFinishing();
+        } else {
+            // 切换到剩余的会话
+            TermuxSession next = service.getLastTermuxSession();
+            if (next != null)
+                setCurrentSession(next.getTerminalSession());
+        }
+        mActivity.getDrawer().closeDrawers();
+    }
+
     public void addNewSession(boolean isFailSafe, String sessionName) {
         TermuxService service = mActivity.getTermuxService();
         if (service == null) return;
